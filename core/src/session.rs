@@ -3,7 +3,6 @@ use std::{
     future::Future,
     io,
     pin::Pin,
-    process::exit,
     sync::{Arc, OnceLock, RwLock, Weak},
     task::{Context, Poll},
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -361,14 +360,14 @@ impl Session {
         );
     }
 
-    fn check_catalogue(attributes: &UserAttributes) {
+    fn check_catalogue(&self, attributes: &UserAttributes) {
         if let Some(account_type) = attributes.get("type") {
             if account_type != "premium" {
                 error!("librespot does not support {account_type:?} accounts.");
                 info!("Please support Spotify and your artists and sign up for a premium account.");
 
-                // TODO: logout instead of exiting
-                exit(1);
+                self.shutdown();
+                panic!("librespot does not support {account_type:?} accounts");
             }
         }
     }
@@ -597,7 +596,7 @@ impl Session {
     pub fn set_user_attribute(&self, key: &str, value: &str) -> Option<String> {
         let mut dummy_attributes = UserAttributes::new();
         dummy_attributes.insert(key.to_owned(), value.to_owned());
-        Self::check_catalogue(&dummy_attributes);
+        self.check_catalogue(&dummy_attributes);
 
         self.0
             .data
@@ -609,7 +608,7 @@ impl Session {
     }
 
     pub fn set_user_attributes(&self, attributes: UserAttributes) {
-        Self::check_catalogue(&attributes);
+        self.check_catalogue(&attributes);
 
         self.0
             .data
@@ -844,7 +843,7 @@ where
                 }
 
                 trace!("Received product info: {user_attributes:#?}");
-                Session::check_catalogue(&user_attributes);
+                session.check_catalogue(&user_attributes);
 
                 session
                     .0
