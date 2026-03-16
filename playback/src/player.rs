@@ -55,8 +55,8 @@ const LOAD_HANDLES_POISON_MSG: &str = "load handles mutex should not be poisoned
 pub type PlayerResult = Result<(), Error>;
 
 pub struct Player {
-    commands: Option<mpsc::UnboundedSender<PlayerCommand>>,
-    thread_handle: Option<thread::JoinHandle<()>>,
+    pub commands: Option<mpsc::UnboundedSender<PlayerCommand>>,
+    pub thread_handle: Option<thread::JoinHandle<()>>,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
@@ -99,7 +99,7 @@ struct PlayerInternal {
 
 static PLAYER_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-enum PlayerCommand {
+pub enum PlayerCommand {
     Load {
         track_id: SpotifyUri,
         play: bool,
@@ -380,7 +380,7 @@ impl NormalisationData {
         })
     }
 
-    fn get_factor(config: &PlayerConfig, data: NormalisationData) -> f64 {
+    pub fn get_factor(config: &PlayerConfig, data: NormalisationData) -> f64 {
         if !config.normalisation {
             return 1.0;
         }
@@ -707,7 +707,7 @@ struct PlayerLoadedTrackData {
     is_explicit: bool,
 }
 
-enum PlayerPreload {
+pub enum PlayerPreload {
     None,
     Loading {
         track_id: SpotifyUri,
@@ -721,7 +721,7 @@ enum PlayerPreload {
 
 type Decoder = Box<dyn AudioDecoder + Send>;
 
-enum PlayerState {
+pub enum PlayerState {
     Stopped,
     Loading {
         track_id: SpotifyUri,
@@ -767,7 +767,7 @@ enum PlayerState {
 }
 
 impl PlayerState {
-    fn is_playing(&self) -> bool {
+    pub fn is_playing(&self) -> bool {
         use self::PlayerState::*;
         match *self {
             Stopped | EndOfTrack { .. } | Paused { .. } | Loading { .. } => false,
@@ -780,18 +780,18 @@ impl PlayerState {
     }
 
     #[allow(dead_code)]
-    fn is_stopped(&self) -> bool {
+    pub fn is_stopped(&self) -> bool {
         use self::PlayerState::*;
         matches!(self, Stopped)
     }
 
     #[allow(dead_code)]
-    fn is_loading(&self) -> bool {
+    pub fn is_loading(&self) -> bool {
         use self::PlayerState::*;
         matches!(self, Loading { .. })
     }
 
-    fn decoder(&mut self) -> Option<&mut Decoder> {
+    pub fn decoder(&mut self) -> Option<&mut Decoder> {
         use self::PlayerState::*;
         match *self {
             Stopped | EndOfTrack { .. } | Loading { .. } => None,
@@ -808,7 +808,7 @@ impl PlayerState {
         }
     }
 
-    fn playing_to_end_of_track(&mut self) {
+    pub fn playing_to_end_of_track(&mut self) {
         use self::PlayerState::*;
         let new_state = mem::replace(self, Invalid);
         match new_state {
@@ -847,7 +847,7 @@ impl PlayerState {
         }
     }
 
-    fn paused_to_playing(&mut self) {
+    pub fn paused_to_playing(&mut self) {
         use self::PlayerState::*;
         let new_state = mem::replace(self, Invalid);
         match new_state {
